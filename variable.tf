@@ -26,3 +26,9 @@ variable "node_disk_size_gb" {
   type        = number
   default     = 30
 }
+
+variable "apis_to_enable" {
+  description = "List of APIs to enable in the project"
+  type        = list(string)
+  default     = ["compute.googleapis.com", "storage.googleapis.com"]
+}

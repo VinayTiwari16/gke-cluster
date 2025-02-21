@@ -5,8 +5,9 @@ locals {
 
 # Enable required APIs
 resource "google_project_service" "gke_apis" {
+  for_each = toset(var.apis_to_enable)
   project = local.project_id
-  service = "container.googleapis.com"
+  service = each.key
 }
 
 # Create GKE cluster
@@ -48,8 +49,8 @@ resource "google_container_cluster" "primary" {
 
  # Ensure Workload Identity is enabled before creating the cluster
   depends_on = [
-    google_project_service.container,
-    google_project_service.iam
+    google_project_service.gke_apis
+  ]
 }
 
 
@@ -61,7 +62,7 @@ resource "google_service_account" "gke_node" {
 
 # Grant the service account necessary permissions
 resource "google_project_iam_member" "gke_node" {
-  project = var.project_id
+  project = local.project_id
   role    = "roles/container.nodeServiceAccount"
   member  = "serviceAccount:${google_service_account.gke_node.email}"
 }
