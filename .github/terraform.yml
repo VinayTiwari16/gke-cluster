@@ -1,0 +1,59 @@
+# This workflow installs the latest version of Terraform CLI and configures the Terraform CLI configuration file
+# with an API token for Terraform Cloud (app.terraform.io). On pull request events, this workflow will run
+# `terraform init`, `terraform fmt`, and `terraform plan` (speculative plan via Terraform Cloud). On push events
+# to the "main" branch, `terraform apply` will be executed.
+#
+
+name: 'Terraform'
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+permissions:
+  contents: read
+  id-token: 'write'
+
+jobs:
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+    environment: production
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+       with:
+         credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+      # with:
+      #   workload_identity_provider: 'projects/372908247222/locations/global/workloadIdentityPools/dev-github-wif-pool/providers/dev-github-wif-pool'
+      #   service_account: '${{ secrets.GCP_SERVICE_ACCOUNT }}'
+    # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: 'my-learning-project-450811'
+
+    - name: Install Terraform
+      uses: hashicorp/setup-terraform@v1
+
+    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+    - name: Initialize Terraform
+      run: terraform init
+
+    # Generates an execution plan for Terraform
+    - name: Terraform plan 
+      run: terraform plan
+
+    - name: Terraform Apply
+      run: terraform apply -auto-approve
